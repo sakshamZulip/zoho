@@ -10,13 +10,16 @@ class ZohoHandler:
         """
 
     def handle_message(self, message: Dict[str, Any], bot_handler: BotHandler) -> None:
-        original_content = message['content']
-        original_sender = message['sender_email']
-
-        bot_handler.send_reply(message, original_content)
-        emoji_name = "wave"  # type: str
-        bot_handler.react(message, emoji_name)
-        return
+        msg = message["content"]
+        if msg == "help" or msg == "":
+            bot_handler.send_reply(message, self.usage())
+            return
+        reply = requests.get("https://api.susi.ai/susi/chat.json", params=dict(q=msg))
+        try:
+            answer = reply.json()["answers"][0]["actions"][0]["expression"]
+        except Exception:
+            answer = "I don't understand. Can you rephrase?"
+        bot_handler.send_reply(message, answer)
 
 
 handler_class = ZohoHandler
