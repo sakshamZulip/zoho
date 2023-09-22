@@ -20,6 +20,7 @@ class ZohoHandler:
         except Exception:
             answer = "I don't understand. Can you rephrase?"
         bot_handler.send_reply(message, answer)
+        return
 
 
 handler_class = ZohoHandler
