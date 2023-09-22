@@ -1,0 +1,15 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "zulip_botserver/zulip_botserver/server.py --config-file zuliprc-zoho --bot-name=zoho",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "zulip_botserver/zulip_botserver/server.py"
+        }
+    ]
+}
