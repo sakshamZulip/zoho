@@ -67,7 +67,7 @@ class ZohoHandler:
             if instruction == "timer":
                 if len(commands) == 3:
                     current_time = int(time.time())
-                    value = commands[1]
+                    value = int(commands[1])
                     unit = commands[2]
                     self.bot_handler.send_reply(self.message, f"Timer started for {value} {unit}.")
 
@@ -93,6 +93,8 @@ class ZohoHandler:
                     return "Invalid number of arguments."
         except IndexError:
             return "Missing Params."
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
 
         return "Invalid Command."
 
