@@ -1,19 +1,22 @@
 from typing import Any, Dict, List
 from zulip_bots.lib import BotHandler
-import time
-import zulip
+import time, requests
 
 
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
-        self.client = zulip.Client(config_file="~/zuliprc")
         self.message = None
         self.bot_handler = None
+        self.headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic em9oby1ib3QtYm90QHp1bGlwLmNvbnZlcnNhbmNlLmNvOjZId3Q5S25VMHlFY0tpS1RlTTFSbDFucHRvcHN1VTRJ'
+        }
+        self.scheduled_messgaes_url = "https://zulip.conversance.co/api/v1/scheduled_messages"
 
         self.commands = [
             "help",
             "list-commands",
-            "timer <value> < s (seconds) | m (minutes) >",
+            "timer <value> < s (seconds) | m (minutes) | h (hours) >",
             "test",
         ]
 
@@ -63,28 +66,31 @@ class ZohoHandler:
         try:
             if instruction == "timer":
                 if len(commands) == 3:
+                    current_time = int(time.time())
                     value = commands[1]
                     unit = commands[2]
                     self.bot_handler.send_reply(self.message, f"Timer started for {value} {unit}.")
 
                     if unit == "s":
-                        time.sleep(int(value))
-                        return "Timer is up!"
+                        value += current_time
                     elif unit == "m":
-                        time.sleep(int(value) * 60)
-                        return "Timer is up!"
+                        value = (value * 60) + current_time
+                    elif unit == "h":
+                        value = (value * 3600) + current_time
                     else:
                         return "Invalid unit for timer"
+                    
+                    payload = f'type=direct&to=%5B18%5D&content=Timer%20is%20up!&scheduled_delivery_timestamp={value}'
+                    try:
+                        response = requests.request("POST", self.scheduled_messgaes_url, headers=self.headers, data=payload)
+                        if response.status_code == 200:
+                            print("Message scheduled successfully!")
+                        else:
+                            print(f"Error: {response.status_code} - {response.text}")
+                    except Exception as e:
+                        print(f"An error occurred: {str(e)}")
                 else:
                     return "Invalid number of arguments."
-            elif instruction == "test":
-                user_id = 18
-                request = {
-                    "type": "private",
-                    "to": [user_id],
-                    "content": "Bruh dont hate on this shit",
-                }
-                result = self.client.send_message(request)
         except IndexError:
             return "Missing Params."
 
