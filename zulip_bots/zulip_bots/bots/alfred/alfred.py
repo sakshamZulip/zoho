@@ -21,9 +21,9 @@ class ZohoHandler:
 
     def usage(self) -> str:
         return """
-        Hi, I am your butler Alfred.
-        Enter `list-commands` to show the list of available commands.
-        Version 1.0
+Hi, I am your butler Alfred.
+Enter `list-commands` to show the list of available commands.
+Version 1.0
         """
 
     def handle_message(self, message: Dict[str, Any], bot_handler: BotHandler) -> None:
