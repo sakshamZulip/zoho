@@ -6,7 +6,7 @@ import zulip
 
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
-        self.client = zulip.Client(config_file="~/.zuliprc")
+        self.client = zulip.Client(config_file="~/zuliprc")
         self.message = None
         self.bot_handler = None
 
