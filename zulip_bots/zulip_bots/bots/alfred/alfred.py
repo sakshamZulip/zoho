@@ -17,14 +17,12 @@ class ZohoHandler:
             "help",
             "list-commands",
             "timer <value> < s (seconds) | m (minutes) | h (hours) >",
-            "test",
         ]
 
         self.descriptions = [
             "Display bot info",
             "Display the list of available commands",
             "Starts a timer",
-            "test",
         ]
 
     def usage(self) -> str:
@@ -91,12 +89,12 @@ class ZohoHandler:
                         print(f"An error occurred: {str(e)}")
                 else:
                     return "Invalid number of arguments."
+            else:
+                return "Invalid Command."
         except IndexError:
             return "Missing Params."
         except Exception as e:
             print(f"An error occurred: {str(e)}")
-
-        return "Invalid Command."
 
 
 handler_class = ZohoHandler
