@@ -40,8 +40,6 @@ zulip-api-py*-venv
 zulip_bots/MANIFEST.in
 
 # Bot configuration files
-zuliprc
-.zuliprc
 botserverrc
 .botserverrc
 
