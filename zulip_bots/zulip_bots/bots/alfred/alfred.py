@@ -1,9 +1,12 @@
 from typing import Any, Dict, List
 from zulip_bots.lib import BotHandler
 import time
+import zulip
+
 
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
+        self.client = zulip.Client(config_file="~/.zuliprc")
         self.message = None
         self.bot_handler = None
 
@@ -11,12 +14,14 @@ class ZohoHandler:
             "help",
             "list-commands",
             "timer <value> < s (seconds) | m (minutes) >",
+            "test",
         ]
 
         self.descriptions = [
             "Display bot info",
             "Display the list of available commands",
             "Starts a timer",
+            "test",
         ]
 
     def usage(self) -> str:
@@ -52,7 +57,7 @@ class ZohoHandler:
         response = self.generate_response(content)
         bot_handler.send_reply(message, response)
         return
-    
+
     def generate_response(self, commands: List[str]) -> str:
         instruction = commands[0]
         try:
@@ -72,10 +77,18 @@ class ZohoHandler:
                         return "Invalid unit for timer"
                 else:
                     return "Invalid number of arguments."
-
+            elif instruction == "test":
+                user_id = 18
+                request = {
+                    "type": "private",
+                    "to": [user_id],
+                    "content": "Bruh dont hate on this shit",
+                }
+                result = self.client.send_message(request)
         except IndexError:
             return "Missing Params."
-            
+
         return "Invalid Command."
+
 
 handler_class = ZohoHandler
