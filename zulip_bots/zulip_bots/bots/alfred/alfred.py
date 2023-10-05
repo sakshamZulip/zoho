@@ -2,9 +2,12 @@ from typing import Any, Dict, List
 from zulip_bots.lib import BotHandler
 import time, requests
 
+# 1000.4FA9E4QL6LNEECL3M4WGV7PJ6B5J0B
+# https://zoho-pao5.onrender.com/?code=1000.045c9afd2bc8edc7bcb631f4b829d6e2.8692867ba47934504a5a6faf9b2e1d52&location=us&accounts-server=https%3A%2F%2Faccounts.zoho.com
 
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
+        self.version = "2.0"
         self.message = None
         self.bot_handler = None
         self.headers = {
@@ -16,21 +19,28 @@ class ZohoHandler:
         self.commands = [
             "help",
             "list-commands",
+            "patch-notes"
             "timer <value> < s (seconds) | m (minutes) | h (hours) >",
         ]
 
         self.descriptions = [
             "Display bot info",
             "Display the list of available commands",
+            "Display the latest features"
             "Starts a timer",
+        ]
+
+        self.notes = [
+            "Ability to view patch notes",
+            "Bot will not spin down due to inactivity"
         ]
 
     def usage(self) -> str:
         return """
         Hi, I am your butler Alfred.
         Enter `list-commands` to show the list of available commands.
-        Version 1.0
-        """
+        Version {version}
+        """.format(version = self.version)
 
     def handle_message(self, message: Dict[str, Any], bot_handler: BotHandler) -> None:
         content = message["content"].strip().split()
@@ -50,6 +60,11 @@ class ZohoHandler:
             for command, description in zip(self.commands, self.descriptions):
                 response += f" - {command} : {description}\n"
 
+            bot_handler.send_reply(message, response)
+            return
+        
+        if content == ["patch-notes"]:
+            response = self.getPatchNotes()
             bot_handler.send_reply(message, response)
             return
 
@@ -95,6 +110,12 @@ class ZohoHandler:
             return "Missing Params."
         except Exception as e:
             print(f"An error occurred: {str(e)}")
+    
+    def getPatchNotes(self):
+        response = "**Version {version} features:** \n"
+        for note in self.notes:
+            response += f" - {note}\n"
+        return response
 
 
 handler_class = ZohoHandler
