@@ -112,7 +112,7 @@ class ZohoHandler:
             print(f"An error occurred: {str(e)}")
     
     def getPatchNotes(self):
-        response = "**Version {version} features:** \n"
+        response = "**Version {version} features:** \n".format(version = self.version)
         for note in self.notes:
             response += f" - {note}\n"
         return response
