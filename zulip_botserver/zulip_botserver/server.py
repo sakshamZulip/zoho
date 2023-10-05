@@ -11,7 +11,7 @@ from importlib import import_module
 from types import ModuleType
 from typing import Any, Dict, List, Optional
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from werkzeug.exceptions import BadRequest, Unauthorized
 
 from zulip import Client
@@ -176,45 +176,48 @@ app = Flask(__name__)
 bots_config = {}  # type: Dict[str, Dict[str, str]]
 
 
-@app.route("/", methods=["POST"])
+@app.route("/", methods=["GET", "POST"])
 def handle_bot() -> str:
-    event = request.get_json(force=True)
-    assert event is not None
-    for bot_name, config in bots_config.items():
-        if config["email"] == event["bot_email"]:
-            bot = bot_name
-            bot_config = config
-            break
-    else:
-        raise BadRequest(
-            "Cannot find a bot with email {} in the Botserver "
-            "configuration file. Do the emails in your botserverrc "
-            "match the bot emails on the server?".format(event["bot_email"])
-        )
-    if bot_config["token"] != event["token"]:
-        raise Unauthorized(
-            "Request token does not match token found for bot {} in the "
-            "Botserver configuration file. Do the outgoing webhooks in "
-            "Zulip point to the right Botserver?".format(event["bot_email"])
-        )
-    app.config.get("BOTS_LIB_MODULES", {})[bot]
-    bot_handler = app.config.get("BOT_HANDLERS", {})[bot]
-    message_handler = app.config.get("MESSAGE_HANDLERS", {})[bot]
-    is_mentioned = event["trigger"] == "mention"
-    is_private_message = event["trigger"] == "private_message"
-    message = event["message"]
-    message["full_content"] = message["content"]
-    # Strip at-mention botname from the message
-    if is_mentioned:
-        # message['content'] will be None when the bot's @-mention is not at the beginning.
-        # In that case, the message shall not be handled.
-        message["content"] = lib.extract_query_without_mention(message=message, client=bot_handler)
-        if message["content"] is None:
-            return json.dumps(dict(response_not_required=True))
+    if request.method == "POST":
+        event = request.get_json(force=True)
+        assert event is not None
+        for bot_name, config in bots_config.items():
+            if config["email"] == event["bot_email"]:
+                bot = bot_name
+                bot_config = config
+                break
+        else:
+            raise BadRequest(
+                "Cannot find a bot with email {} in the Botserver "
+                "configuration file. Do the emails in your botserverrc "
+                "match the bot emails on the server?".format(event["bot_email"])
+            )
+        if bot_config["token"] != event["token"]:
+            raise Unauthorized(
+                "Request token does not match token found for bot {} in the "
+                "Botserver configuration file. Do the outgoing webhooks in "
+                "Zulip point to the right Botserver?".format(event["bot_email"])
+            )
+        app.config.get("BOTS_LIB_MODULES", {})[bot]
+        bot_handler = app.config.get("BOT_HANDLERS", {})[bot]
+        message_handler = app.config.get("MESSAGE_HANDLERS", {})[bot]
+        is_mentioned = event["trigger"] == "mention"
+        is_private_message = event["trigger"] == "private_message"
+        message = event["message"]
+        message["full_content"] = message["content"]
+        # Strip at-mention botname from the message
+        if is_mentioned:
+            # message['content'] will be None when the bot's @-mention is not at the beginning.
+            # In that case, the message shall not be handled.
+            message["content"] = lib.extract_query_without_mention(message=message, client=bot_handler)
+            if message["content"] is None:
+                return json.dumps(dict(response_not_required=True))
 
-    if is_private_message or is_mentioned:
-        message_handler.handle_message(message=message, bot_handler=bot_handler)
-    return json.dumps(dict(response_not_required=True))
+        if is_private_message or is_mentioned:
+            message_handler.handle_message(message=message, bot_handler=bot_handler)
+        return json.dumps(dict(response_not_required=True))
+    else:
+        return jsonify(success=True)
 
 
 def main() -> None:
