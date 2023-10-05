@@ -19,14 +19,14 @@ class ZohoHandler:
         self.commands = [
             "help",
             "list-commands",
-            "patch-notes"
+            "patch-notes",
             "timer <value> < s (seconds) | m (minutes) | h (hours) >",
         ]
 
         self.descriptions = [
             "Display bot info",
             "Display the list of available commands",
-            "Display the latest features"
+            "Display the latest features",
             "Starts a timer",
         ]
 
