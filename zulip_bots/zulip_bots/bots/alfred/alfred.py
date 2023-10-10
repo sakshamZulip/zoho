@@ -114,6 +114,7 @@ class ZohoHandler:
 
     def generate_response(self, commands: List[str], message: Dict[str, Any]) -> str:
         instruction = commands[0]
+        email = message['sender_email']
         try:
             if instruction == "timer":
                 if len(commands) == 3:
@@ -171,8 +172,12 @@ class ZohoHandler:
 
                         project_id = project[0]
 
+                        # get user
+                        user = self.getClockifyUser(email)
+                        user_id = user["id"]
+
                         # start timer
-                        route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/time-entries"
+                        route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/user/{user_id}/time-entries"
                         startTime = (
                             datetime.now().astimezone(timezone.utc).isoformat(timespec="seconds")
                         )
@@ -197,7 +202,7 @@ class ZohoHandler:
 
                         return f"Clockify timer started for `{task_description}` under project `{project_label}`."
                     elif subcommand == "out":
-                        user = self.getClockifyUser()
+                        user = self.getClockifyUser(email)
                         user_id = user["id"]
 
                         route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/user/{user_id}/time-entries"
@@ -237,8 +242,8 @@ class ZohoHandler:
             response += f" - {note}\n"
         return response
 
-    def getClockifyUser(self):
-        route = f"{self.clockify_base_url}/user"
+    def getClockifyUser(self, email):
+        route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/users"
         try:
             response = requests.request(
                 "GET",
@@ -247,10 +252,11 @@ class ZohoHandler:
             )
             if response.status_code != 200:
                 print(f"Error: {response.status_code} - {response.text}")
+            
+            users = json.loads(response.content)
+            user = [x for x in users if x['email'] == email][0]
         except Exception as e:
             print(f"An error occurred: {str(e)}")
-
-        user = json.loads(response.content)
         return user
     
     def getClockifyProjectsArr(self):
