@@ -37,9 +37,9 @@ class ZohoHandler:
         #########################################################
         """ Clockify """
         #########################################################
-        self.clockify = bot_handler.get_config_info("clockify")
-        self.clockify_api_key = self.clockify["api_key"]
-        self.clockify_workspace_id = self.clockify["workspace_id"]
+        self.clockify = bot_handler.get_config_info("alfred")
+        self.clockify_api_key = self.clockify["clockify_api_key"]
+        self.clockify_workspace_id = self.clockify["clockify_workspace_id"]
         self.clockify_base_url = "https://api.clockify.me/api/v1"
         self.clockify_headers = {
             "content-type": "application/json",
