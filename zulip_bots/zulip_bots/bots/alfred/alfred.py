@@ -1,26 +1,13 @@
 from typing import Any, Dict, List
 from zulip_bots.lib import BotHandler
-import time, requests
+import time, requests, json
 
 # 1000.4FA9E4QL6LNEECL3M4WGV7PJ6B5J0B
 # https://zoho-pao5.onrender.com/?code=1000.045c9afd2bc8edc7bcb631f4b829d6e2.8692867ba47934504a5a6faf9b2e1d52&location=us&accounts-server=https%3A%2F%2Faccounts.zoho.com
-
+# zulip-bot-shell -b zulip_bots/zulip_bots/bots/alfred/alfred.conf alfred
 
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
-        #########################################################
-        """Metadata"""
-        #########################################################
-        self.version = "2.1"
-        self.message = None
-        self.bot_handler = None
-        self.commands = [
-            ["Basic :working_on_it:", [self.commands_basic, self.descriptions_basic]],
-            ["Timer :timer:", [self.commands_timer, self.descriptions_timer]],
-            ["Clockify :time:", [self.commands_clockify, self.descriptions_clockify]],
-        ]
-        self.notes = ["Ability to view patch notes", "Bot will not spin down due to inactivity"]
-
         #########################################################
         """ Basic """
         #########################################################
@@ -51,8 +38,8 @@ class ZohoHandler:
         """ Clockify """
         #########################################################
         self.clockify = bot_handler.get_config_info("CLOCKIFY")
-        self.clockify_api_key = self.clockify["API_KEY"]
-        self.clockify_workspace_id = self.clockify["WORKSPACE_ID"]
+        self.clockify_api_key = self.clockify["api_key"]
+        self.clockify_workspace_id = self.clockify["workspace_id"]
         self.clockify_base_url = "https://api.clockify.me/api/v1"
         self.clockify_headers = {
             "content-type": "application/json",
@@ -62,6 +49,19 @@ class ZohoHandler:
         self.commands_clockify = ["clock list"]
 
         self.descriptions_clockify = ["List Clockify projects"]
+
+        #########################################################
+        """Metadata"""
+        #########################################################
+        self.version = "2.1"
+        self.message = None
+        self.bot_handler = None
+        self.commands = [
+            ["Basic :working_on_it:", [self.commands_basic, self.descriptions_basic]],
+            ["Timer :timer:", [self.commands_timer, self.descriptions_timer]],
+            ["Clockify :time:", [self.commands_clockify, self.descriptions_clockify]],
+        ]
+        self.notes = ["Ability to view patch notes", "Bot will not spin down due to inactivity"]
 
     def usage(self) -> str:
         return """
@@ -93,6 +93,7 @@ class ZohoHandler:
                 response += f"```spoiler {command_type}\n"
                 for command, description in zip(command_details[0], command_details[1]):
                     response += f" - {command} : {description}\n"
+                response += "```\n"
 
             bot_handler.send_reply(message, response)
             return
@@ -152,14 +153,20 @@ class ZohoHandler:
                             response = requests.request(
                                 "GET",
                                 route,
-                                headers=self.zulip_timer_headers,
+                                headers=self.clockify_headers,
                             )
-                            if response.status_code == 200:
-                                print(response.json)
-                            else:
+                            if response.status_code != 200:
                                 print(f"Error: {response.status_code} - {response.text}")
                         except Exception as e:
                             print(f"An error occurred: {str(e)}")
+                        
+                        response_arr = json.loads(response.content)
+                        projects = [x['name'] for x in response_arr]
+                        
+                        reply = "**Projects:**\n"
+                        for project in projects:
+                            reply += f" - {project}\n"
+                        return reply
                     else:
                         return "Invalid Command."
                 else:
