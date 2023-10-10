@@ -1,17 +1,20 @@
 from typing import Any, Dict, List
 from zulip_bots.lib import BotHandler
-import time, requests, json
+import time, requests, json, os
 from datetime import datetime, timezone
 
-# 1000.4FA9E4QL6LNEECL3M4WGV7PJ6B5J0B
-# https://zoho-pao5.onrender.com/?code=1000.045c9afd2bc8edc7bcb631f4b829d6e2.8692867ba47934504a5a6faf9b2e1d52&location=us&accounts-server=https%3A%2F%2Faccounts.zoho.com
 # zulip-bot-shell -b zulip_bots/zulip_bots/bots/alfred/alfred.conf alfred
-
-# 650c92045c881944f09ec1b1
 
 
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
+        #########################################################
+        """Keys"""
+        #########################################################
+        self.ZULIP_API_KEY = os.getenv("ZULIP_API_KEY")
+        self.CLOCKIFY_API_KEY = os.getenv("CLOCKIFY_API_KEY")
+        self.CLOCKIFY_WORKSPACE_ID = os.getenv("CLOCKIFY_WORKSPACE_ID")
+
         #########################################################
         """Basic"""
         #########################################################
@@ -32,7 +35,7 @@ class ZohoHandler:
 
         self.zulip_timer_headers = {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": "Basic em9oby1ib3QtYm90QHp1bGlwLmNvbnZlcnNhbmNlLmNvOjZId3Q5S25VMHlFY0tpS1RlTTFSbDFucHRvcHN1VTRJ",
+            "Authorization": f"Basic {self.ZULIP_API_KEY}",
         }
         self.zulip_timer_scheduled_messgaes_url = (
             "https://zulip.conversance.co/api/v1/scheduled_messages"
@@ -41,22 +44,21 @@ class ZohoHandler:
         #########################################################
         """ Clockify """
         #########################################################
-        self.clockify_api_key = "NjkyMDBhYWYtZDNlNS00YzA3LThjMTktZjQ2NDAzNTdmMmQ3"
-        self.clockify_workspace_id = "62503fbf4d9e3d2acb74af33"
+        self.clockify_workspace_id = self.CLOCKIFY_WORKSPACE_ID
         self.clockify_base_url = "https://api.clockify.me/api/v1"
         self.clockify_headers = {
             "content-type": "application/json",
-            "x-api-key": self.clockify_api_key,
+            "x-api-key": self.CLOCKIFY_API_KEY,
         }
 
-        self.commands_clockify = ["clock list"]
+        self.commands_clockify = ["clock list", "clock in <project_label> <project_description>", "clock out"]
 
-        self.descriptions_clockify = ["List Clockify projects"]
+        self.descriptions_clockify = ["List Clockify projects", "Start a new time entry", "Stop current timer"]
 
         #########################################################
         """Metadata"""
         #########################################################
-        self.version = "2.2"
+        self.version = "2.3"
         self.message = None
         self.bot_handler = None
         self.commands = [
@@ -64,7 +66,7 @@ class ZohoHandler:
             ["Timer :timer:", [self.commands_timer, self.descriptions_timer]],
             ["Clockify :time:", [self.commands_clockify, self.descriptions_clockify]],
         ]
-        self.notes = ["Clockify integration"]
+        self.notes = ["Clockify integration", "Ability to clock in tasks and clock out", "env variables added"]
 
     def usage(self) -> str:
         return """
@@ -252,11 +254,12 @@ class ZohoHandler:
             )
             if response.status_code != 200:
                 print(f"Error: {response.status_code} - {response.text}")
-            
-            users = json.loads(response.content)
-            user = [x for x in users if x['email'] == email][0]
+
         except Exception as e:
             print(f"An error occurred: {str(e)}")
+
+        users = json.loads(response.content)
+        user = [x for x in users if x['email'] == email][0]
         return user
     
     def getClockifyProjectsArr(self):
