@@ -1,15 +1,19 @@
 from typing import Any, Dict, List
 from zulip_bots.lib import BotHandler
 import time, requests, json
+from datetime import datetime, timezone
 
 # 1000.4FA9E4QL6LNEECL3M4WGV7PJ6B5J0B
 # https://zoho-pao5.onrender.com/?code=1000.045c9afd2bc8edc7bcb631f4b829d6e2.8692867ba47934504a5a6faf9b2e1d52&location=us&accounts-server=https%3A%2F%2Faccounts.zoho.com
 # zulip-bot-shell -b zulip_bots/zulip_bots/bots/alfred/alfred.conf alfred
 
+# 650c92045c881944f09ec1b1
+
+
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
         #########################################################
-        """ Basic """
+        """Basic"""
         #########################################################
         self.commands_basic = ["help", "list-commands", "patch-notes"]
 
@@ -52,7 +56,7 @@ class ZohoHandler:
         #########################################################
         """Metadata"""
         #########################################################
-        self.version = "2.1"
+        self.version = "2.2"
         self.message = None
         self.bot_handler = None
         self.commands = [
@@ -60,7 +64,7 @@ class ZohoHandler:
             ["Timer :timer:", [self.commands_timer, self.descriptions_timer]],
             ["Clockify :time:", [self.commands_clockify, self.descriptions_clockify]],
         ]
-        self.notes = ["Ability to view patch notes", "Bot will not spin down due to inactivity"]
+        self.notes = ["Clockify integration"]
 
     def usage(self) -> str:
         return """
@@ -104,11 +108,11 @@ class ZohoHandler:
 
         self.message = message
         self.bot_handler = bot_handler
-        response = self.generate_response(content)
+        response = self.generate_response(content, message)
         bot_handler.send_reply(message, response)
         return
 
-    def generate_response(self, commands: List[str]) -> str:
+    def generate_response(self, commands: List[str], message: Dict[str, Any]) -> str:
         instruction = commands[0]
         try:
             if instruction == "timer":
@@ -144,28 +148,78 @@ class ZohoHandler:
                 else:
                     return "Invalid number of arguments."
             elif instruction == "clock":
-                if len(commands) == 2:
+                if len(commands) >= 2:
                     subcommand = commands[1]
                     if subcommand == "list":
-                        route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/projects"
+                        response_arr = self.getClockifyProjectsArr()
+                        projects = [x["name"] for x in response_arr]
+
+                        reply = "**Projects:**\n"
+                        for project in projects:
+                            reply += f" - {project}\n"
+                        return reply
+                    elif subcommand == "in":
+                        project_label = commands[2]
+                        task_description = " ".join(commands[3:])
+
+                        # get project id
+                        response_arr = self.getClockifyProjectsArr()
+                        project = [x["id"] for x in response_arr if x["name"] == project_label]
+
+                        if len(project) == 0:
+                            return "Invalid project. Check list using `clock list`."
+
+                        project_id = project[0]
+
+                        # start timer
+                        route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/time-entries"
+                        startTime = (
+                            datetime.now().astimezone(timezone.utc).isoformat(timespec="seconds")
+                        )
+                        startTime.replace("+00:00", "Z")
                         try:
                             response = requests.request(
-                                "GET",
+                                "POST",
                                 route,
                                 headers=self.clockify_headers,
+                                data=json.dumps(
+                                    {
+                                        "start": startTime,
+                                        "projectId": project_id,
+                                        "description": task_description,
+                                    }
+                                ),
+                            )
+                            if response.status_code != 201:
+                                print(f"Error: {response.status_code} - {response.text}")
+                        except Exception as e:
+                            print(f"An error occurred: {str(e)}")
+
+                        return f"Clockify timer started for `{task_description}` under project `{project_label}`."
+                    elif subcommand == "out":
+                        user = self.getClockifyUser()
+                        user_id = user["id"]
+
+                        route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/user/{user_id}/time-entries"
+                        endTime = (
+                            datetime.now().astimezone(timezone.utc).isoformat(timespec="seconds")
+                        )
+                        endTime.replace("+00:00", "Z")
+                        try:
+                            response = requests.request(
+                                "PATCH",
+                                route,
+                                headers=self.clockify_headers,
+                                data=json.dumps({
+                                    "end": endTime
+                                })
                             )
                             if response.status_code != 200:
                                 print(f"Error: {response.status_code} - {response.text}")
                         except Exception as e:
                             print(f"An error occurred: {str(e)}")
-                        
-                        response_arr = json.loads(response.content)
-                        projects = [x['name'] for x in response_arr]
-                        
-                        reply = "**Projects:**\n"
-                        for project in projects:
-                            reply += f" - {project}\n"
-                        return reply
+
+                        return "Clockify timer stopped."
                     else:
                         return "Invalid Command."
                 else:
@@ -183,5 +237,36 @@ class ZohoHandler:
             response += f" - {note}\n"
         return response
 
+    def getClockifyUser(self):
+        route = f"{self.clockify_base_url}/user"
+        try:
+            response = requests.request(
+                "GET",
+                route,
+                headers=self.clockify_headers,
+            )
+            if response.status_code != 200:
+                print(f"Error: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+
+        user = json.loads(response.content)
+        return user
+    
+    def getClockifyProjectsArr(self):
+        route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/projects"
+        try:
+            response = requests.request(
+                "GET",
+                route,
+                headers=self.clockify_headers,
+            )
+            if response.status_code != 200:
+                print(f"Error: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+
+        response_arr = json.loads(response.content)
+        return response_arr
 
 handler_class = ZohoHandler
