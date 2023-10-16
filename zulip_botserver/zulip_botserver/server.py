@@ -118,7 +118,7 @@ def load_lib_modules(available_bots: List[str]) -> Dict[str, ModuleType]:
             if bot.endswith(".py") and os.path.isfile(bot):
                 lib_module = import_module_from_source(bot, "custom_bot_module")
             else:
-                module_name = "zulip_bots.zulip_bots.bots.{bot}.{bot}".format(bot=bot)
+                module_name = "zulip_bots.bots.{bot}.{bot}".format(bot=bot)
                 lib_module = import_module(module_name)
             bots_lib_module[bot] = lib_module
         except IndexError: #ImportError
