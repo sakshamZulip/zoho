@@ -7,7 +7,7 @@ from minio import Minio
 # zulip-bot-shell -b zulip_bots/zulip_bots/bots/alfred/alfred.conf alfred
 
 
-class ZohoHandler:
+class AlfredHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
         #########################################################
         """Keys and Clients"""
@@ -322,4 +322,4 @@ class ZohoHandler:
         return response_arr
 
 
-handler_class = ZohoHandler
+handler_class = AlfredHandler
