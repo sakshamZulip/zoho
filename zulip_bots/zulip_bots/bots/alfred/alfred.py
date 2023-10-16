@@ -110,13 +110,6 @@ class ZohoHandler:
 
         content[0] = content[0].lower()
 
-        if content == ["s3"]:
-            if self.s3client.bucket_exists("test-bucket-saksham"):
-                bot_handler.send_reply(message, "yes")
-            else:
-                bot_handler.send_reply(message, "no")
-            return
-
         if content == ["help"]:
             bot_handler.send_reply(message, self.usage())
             return
@@ -190,10 +183,6 @@ class ZohoHandler:
                         object_name = f"{self.clockify_key_subfolder}/{email}"
                         self.s3client.put_object(self.bucket_name, object_name, api_key, api_key.getbuffer().nbytes)
                         return "Key added successfully!"
-                    elif subcommand == "test":
-                        email = message["sender_email"]
-                        api_key = self.getClockifyHeaders(email)
-                        return type(api_key)
                     elif subcommand == "list":
                         response_arr = self.getClockifyProjectsArr()
                         projects = [x["name"] for x in response_arr]
