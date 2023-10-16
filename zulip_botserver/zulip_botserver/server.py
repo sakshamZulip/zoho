@@ -113,6 +113,9 @@ def parse_config_file(config_file_path: str) -> configparser.ConfigParser:
 
 def load_lib_modules(available_bots: List[str]) -> Dict[str, ModuleType]:
     bots_lib_module = {}
+    print("========================================================")
+    print(available_bots)
+    print("========================================================")
     for bot in available_bots:
         try:
             if bot.endswith(".py") and os.path.isfile(bot):
