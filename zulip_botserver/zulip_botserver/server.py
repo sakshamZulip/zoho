@@ -113,9 +113,7 @@ def parse_config_file(config_file_path: str) -> configparser.ConfigParser:
 
 def load_lib_modules(available_bots: List[str]) -> Dict[str, ModuleType]:
     bots_lib_module = {}
-    print("========================================================")
-    print(available_bots)
-    print("========================================================")
+    available_bots = ['helloworld']
     for bot in available_bots:
         try:
             if bot.endswith(".py") and os.path.isfile(bot):
@@ -123,9 +121,6 @@ def load_lib_modules(available_bots: List[str]) -> Dict[str, ModuleType]:
             else:
                 module_name = "zulip_bots.bots.{bot}.{bot}".format(bot=bot)
                 lib_module = import_module(module_name)
-                print("========================================================")
-                print(lib_module)
-                print("========================================================")
             bots_lib_module[bot] = lib_module
         except ImportError:
             _, bots_lib_module[bot] = import_module_from_zulip_bot_registry(bot)
