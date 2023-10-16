@@ -17,3 +17,4 @@ types-requests
 gitlint>=0.13.0
 -r ./zulip/integrations/bridge_with_matrix/requirements.txt
 urllib3==1.26.6
+minio>=7.1.17

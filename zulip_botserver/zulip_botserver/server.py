@@ -121,7 +121,7 @@ def load_lib_modules(available_bots: List[str]) -> Dict[str, ModuleType]:
                 module_name = "zulip_bots.bots.{bot}.{bot}".format(bot=bot)
                 lib_module = import_module(module_name)
             bots_lib_module[bot] = lib_module
-        except IndexError: #ImportError
+        except ImportError:
             _, bots_lib_module[bot] = import_module_from_zulip_bot_registry(bot)
             if bots_lib_module[bot] is None:
                 error_message = (
