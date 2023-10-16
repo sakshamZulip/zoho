@@ -1,7 +1,8 @@
 from typing import Any, Dict, List
 from zulip_bots.lib import BotHandler
-import time, requests, json, os
+import time, requests, json, os, io
 from datetime import datetime, timezone
+from minio import Minio
 
 # zulip-bot-shell -b zulip_bots/zulip_bots/bots/alfred/alfred.conf alfred
 
@@ -9,11 +10,19 @@ from datetime import datetime, timezone
 class ZohoHandler:
     def initialize(self, bot_handler: BotHandler) -> None:
         #########################################################
-        """Keys"""
+        """Keys and Clients"""
         #########################################################
         self.ZULIP_API_KEY = os.getenv("ZULIP_API_KEY")
         self.CLOCKIFY_API_KEY = os.getenv("CLOCKIFY_API_KEY")
         self.CLOCKIFY_WORKSPACE_ID = os.getenv("CLOCKIFY_WORKSPACE_ID")
+
+        self.s3client = Minio(
+            "s3.intranet:9000",
+            access_key=os.getenv("S3_ACCESS_KEY"),
+            secret_key=os.getenv("S3_SECRET_KEY"),
+        )
+
+        self.bucket_name = "alfred"
 
         #########################################################
         """Basic"""
@@ -44,6 +53,7 @@ class ZohoHandler:
         #########################################################
         """ Clockify """
         #########################################################
+        self.clockify_key_subfolder = "clockify/key"
         self.clockify_workspace_id = self.CLOCKIFY_WORKSPACE_ID
         self.clockify_base_url = "https://api.clockify.me/api/v1"
         self.clockify_headers = {
@@ -51,9 +61,19 @@ class ZohoHandler:
             "x-api-key": self.CLOCKIFY_API_KEY,
         }
 
-        self.commands_clockify = ["clock list", "clock in <project_label> <project_description>", "clock out"]
+        self.commands_clockify = [
+            "clock key <api_key>"
+            "clock list",
+            "clock in <project_label> <project_description>",
+            "clock out",
+        ]
 
-        self.descriptions_clockify = ["List Clockify projects", "Start a new time entry", "Stop current timer"]
+        self.descriptions_clockify = [
+            "Add API key for clockify"
+            "List Clockify projects",
+            "Start a new time entry",
+            "Stop current timer",
+        ]
 
         #########################################################
         """Metadata"""
@@ -66,7 +86,11 @@ class ZohoHandler:
             ["Timer :timer:", [self.commands_timer, self.descriptions_timer]],
             ["Clockify :time:", [self.commands_clockify, self.descriptions_clockify]],
         ]
-        self.notes = ["Clockify integration", "Ability to clock in tasks and clock out", "env variables added"]
+        self.notes = [
+            "Clockify integration",
+            "Ability to clock in tasks and clock out",
+            "env variables added",
+        ]
 
     def usage(self) -> str:
         return """
@@ -85,6 +109,13 @@ class ZohoHandler:
             return
 
         content[0] = content[0].lower()
+
+        if content == ["s3"]:
+            if self.s3client.bucket_exists("test-bucket-saksham"):
+                bot_handler.send_reply(message, "yes")
+            else:
+                bot_handler.send_reply(message, "no")
+            return
 
         if content == ["help"]:
             bot_handler.send_reply(message, self.usage())
@@ -116,7 +147,7 @@ class ZohoHandler:
 
     def generate_response(self, commands: List[str], message: Dict[str, Any]) -> str:
         instruction = commands[0]
-        email = message['sender_email']
+        email = message["sender_email"]
         try:
             if instruction == "timer":
                 if len(commands) == 3:
@@ -153,7 +184,17 @@ class ZohoHandler:
             elif instruction == "clock":
                 if len(commands) >= 2:
                     subcommand = commands[1]
-                    if subcommand == "list":
+                    if subcommand == "key":
+                        api_key = io.BytesIO(commands[2].encode('utf-8'))
+                        email = message["sender_email"]
+                        object_name = f"{self.clockify_key_subfolder}/{email}"
+                        self.s3client.put_object(self.bucket_name, object_name, api_key, api_key.getbuffer().nbytes)
+                        return "Key added successfully!"
+                    elif subcommand == "test":
+                        email = message["sender_email"]
+                        api_key = self.getClockifyHeaders(email)
+                        return type(api_key)
+                    elif subcommand == "list":
                         response_arr = self.getClockifyProjectsArr()
                         projects = [x["name"] for x in response_arr]
 
@@ -188,7 +229,7 @@ class ZohoHandler:
                             response = requests.request(
                                 "POST",
                                 route,
-                                headers=self.clockify_headers,
+                                headers=self.getClockifyHeaders(message["sender_email"]),
                                 data=json.dumps(
                                     {
                                         "start": startTime,
@@ -216,10 +257,8 @@ class ZohoHandler:
                             response = requests.request(
                                 "PATCH",
                                 route,
-                                headers=self.clockify_headers,
-                                data=json.dumps({
-                                    "end": endTime
-                                })
+                                headers=self.getClockifyHeaders(message["sender_email"]),
+                                data=json.dumps({"end": endTime}),
                             )
                             if response.status_code != 200:
                                 print(f"Error: {response.status_code} - {response.text}")
@@ -237,12 +276,27 @@ class ZohoHandler:
             return "Missing Params."
         except Exception as e:
             print(f"An error occurred: {str(e)}")
+            return f"An error occured: {str(e)}"
 
     def getPatchNotes(self):
         response = "**Version {version} features:** \n".format(version=self.version)
         for note in self.notes:
             response += f" - {note}\n"
         return response
+    
+    def getClockifyHeaders(self, email):
+        try:
+            object_name = f"{self.clockify_key_subfolder}/{email}"
+            response = self.s3client.get_object(self.bucket_name, object_name)
+            api_key = response.read().decode('utf-8')
+        finally:
+            response.close()
+            response.release_conn()
+        
+        return {
+            "content-type": "application/json",
+            "x-api-key": api_key,
+        }
 
     def getClockifyUser(self, email):
         route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/users"
@@ -259,9 +313,9 @@ class ZohoHandler:
             print(f"An error occurred: {str(e)}")
 
         users = json.loads(response.content)
-        user = [x for x in users if x['email'] == email][0]
+        user = [x for x in users if x["email"] == email][0]
         return user
-    
+
     def getClockifyProjectsArr(self):
         route = f"{self.clockify_base_url}/workspaces/{self.clockify_workspace_id}/projects"
         try:
@@ -277,5 +331,6 @@ class ZohoHandler:
 
         response_arr = json.loads(response.content)
         return response_arr
+
 
 handler_class = ZohoHandler
