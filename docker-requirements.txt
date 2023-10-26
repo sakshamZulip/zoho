@@ -1,0 +1,20 @@
+crayons
+twine
+black==23.3.0
+isort
+flake8
+mock
+pytest
+pytest-cov
+/app/zulip
+/app/zulip_bots
+/app/zulip_botserver
+git+https://github.com/zulip/zulint@14e3974001bf8442a6a3486125865660f1f2eb68#egg=zulint==1.0.0
+mypy==0.910
+types-python-dateutil
+types-pytz
+types-requests
+gitlint>=0.13.0
+-r ./zulip/integrations/bridge_with_matrix/requirements.txt
+urllib3==1.26.6
+minio>=7.1.17

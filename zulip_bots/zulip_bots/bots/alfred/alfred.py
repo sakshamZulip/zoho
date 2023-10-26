@@ -62,14 +62,14 @@ class AlfredHandler:
         }
 
         self.commands_clockify = [
-            "clock key <api_key>"
+            "clock key <api_key>",
             "clock list",
             "clock in <project_label> <project_description>",
             "clock out",
         ]
 
         self.descriptions_clockify = [
-            "Add API key for clockify"
+            "Add API key for clockify",
             "List Clockify projects",
             "Start a new time entry",
             "Stop current timer",

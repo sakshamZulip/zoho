@@ -75,3 +75,130 @@ To run the linter, type:
 To check the type annotations, run:
 
 `./tools/run-mypy`
+
+```
+python-zulip-api
+├─ .dockerignore
+├─ .gitignore
+├─ .gitlint
+├─ .mailmap
+├─ Dockerfile
+├─ LICENSE
+├─ mypy.ini
+├─ NOTICE
+├─ pyproject.toml
+├─ README.md
+├─ requirements.txt
+├─ stubs
+│  ├─ zephyr.pyi
+│  └─ _zephyr.pyi
+├─ THIRDPARTY
+├─ tools
+│  ├─ clean-branches
+│  ├─ clean-repo
+│  ├─ custom_check.py
+│  ├─ deploy
+│  ├─ deploy-branch
+│  ├─ fetch-pull-request
+│  ├─ fetch-rebase-pull-request
+│  ├─ gitlint-rules.py
+│  ├─ lint
+│  ├─ lint-commits
+│  ├─ provision
+│  ├─ reset-to-pull-request
+│  ├─ review
+│  └─ run-mypy
+├─ zulip
+│  ├─ CHANGELOG.md
+│  ├─ MANIFEST.in
+│  ├─ README.md
+│  ├─ setup.cfg
+│  ├─ setup.py
+│  ├─ tests
+│  │  ├─ test_default_arguments.py
+│  │  ├─ test_hash_util_decode.py
+│  │  └─ __init__.py
+│  └─ zulip
+│     ├─ api_examples.py
+│     ├─ cli.py
+│     ├─ examples
+│     │  ├─ alert-words
+│     │  ├─ create-user
+│     │  ├─ delete-message
+│     │  ├─ delete-stream
+│     │  ├─ edit-message
+│     │  ├─ edit-stream
+│     │  ├─ get-history
+│     │  ├─ get-messages
+│     │  ├─ get-public-streams
+│     │  ├─ get-raw-message
+│     │  ├─ get-stream-topics
+│     │  ├─ get-subscriptions
+│     │  ├─ get-user-presence
+│     │  ├─ list-users
+│     │  ├─ message-history
+│     │  ├─ mute-topic
+│     │  ├─ print-events
+│     │  ├─ print-messages
+│     │  ├─ realm-emoji
+│     │  ├─ send-message
+│     │  ├─ subscribe
+│     │  ├─ unsubscribe
+│     │  ├─ update-message-flags
+│     │  ├─ upload-file
+│     │  ├─ welcome-message
+│     │  └─ zuliprc
+│     ├─ py.typed
+│     ├─ send.py
+│     ├─ __init__.py
+│     └─ __pycache__
+├─ zuliprc-alfred
+├─ zulip_bots
+│  ├─ architecture.md
+│  ├─ README.md
+│  ├─ setup.py
+│  └─ zulip_bots
+│     ├─ .gitignore
+│     ├─ bots
+│     │  ├─ alfred
+│     │  │  ├─ alfred.conf
+│     │  │  ├─ alfred.py
+│     │  │  ├─ doc.md
+│     │  │  ├─ test_alfred.py
+│     │  │  ├─ __init__.py
+│     │  │  └─ __pycache__
+│     ├─ bot_shell.py
+│     ├─ custom_exceptions.py
+│     ├─ finder.py
+│     ├─ game_handler.py
+│     ├─ lib.py
+│     ├─ provision.py
+│     ├─ py.typed
+│     ├─ request_test_lib.py
+│     ├─ run.py
+│     ├─ simple_lib.py
+│     ├─ tests
+│     │  ├─ test_finder.py
+│     │  ├─ test_lib.py
+│     │  └─ test_run.py
+│     ├─ test_file_utils.py
+│     ├─ test_lib.py
+│     ├─ __init__.py
+│     └─ __pycache__
+└─ zulip_botserver
+   ├─ README.md
+   ├─ setup.py
+   ├─ tests
+   │  ├─ server_test_lib.py
+   │  ├─ test.conf
+   │  ├─ test_server.py
+   │  └─ __init__.py
+   ├─ zulip-botserver-supervisord.conf
+   └─ zulip_botserver
+      ├─ input_parameters.py
+      ├─ py.typed
+      ├─ server.py
+      ├─ __init__.py
+      └─ __pycache__
+
+```
